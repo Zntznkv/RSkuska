@@ -1,13 +1,103 @@
-Version: 1.0
+---
+title: "Rgapminder"
+author: "Zaneta"
+output: html_document
+---
 
-RestoreWorkspace: Default
-SaveWorkspace: Default
-AlwaysSaveHistory: Default
+Na analýzu a vizualizáciu dát som použila balíček gapmider s údajmi o krajinách sveta, ako population, lifexp alebo gpdpercap. Nazačiatku som si daný balíček nainštalovala.
 
-EnableCodeIndexing: Yes
-UseSpacesForTab: Yes
-NumSpacesForTab: 2
-Encoding: ISO-8859-2
+``` {r}
+install.packages("gapminder")
+``` 
+``` {r}
+library(gapminder)
+``` 
+Ďalej som použila funkciu summary, ktorá nám zosumarizuje všetky premenné v datach. 
 
-RnwWeave: Sweave
-LaTeX: pdfLaTeX
+``` {r}
+data("gapminder")
+``` 
+``` {r}
+summary(gapminder)
+``` 
+Následne pomocou daných funkcii si možeme dať vyrátať rôzne údaje, ako medián, priemer či už gdpPercap alebo LifeExp.
+
+``` {r}
+mean(gapminder$gdpPercap)
+``` 
+``` {r}
+x<- mean(gapminder$gdpPercap)
+``` 
+``` {r}
+median(gapminder$gdpPercap)
+``` 
+``` {r}
+mean(gapminder$lifeExp)
+``` 
+``` {r}
+median(gapminder$lifeExp)
+``` 
+Na manipuláciu s dátami si stiahneme package "dplyr" a "tidyr".
+``` {r}
+library(dplyr)
+``` 
+``` {r}
+library(tidyr)
+``` 
+Potom si vyberieme čo chceme analyzovať. Ďalej som si vyfiltrovala konkretné štáty, ktoré chceme porovnať.Ja som si vybrala na porovnanie Kanadu a Slovensko. Group_by zhromažďuje údaje podľa kritérií, v našom prípade "Country". V ďalšom kroku len zosumarizujeme naše dáta podľa priemernej doby života, zadefinovanú ako priemer "lifeExp".
+```
+``` {r}
+gapminder %>%
+  select(country, lifeExp) %>%
+  filter(country == "Canada" |
+         country == "Slovak Republic") %>%
+  group_by(country) %>%
+  summarise(Average_life = mean(lifeExp))
+``` 
+
+V ďalšej časti chcem zistiť, či sú naše dáta štatisticky významné. Použijeme dataframe "dfDZ".
+
+``` {r}
+dfDZ <- gapminder %>%
+  select(country, lifeExp) %>%
+  filter(country == "Canada" |
+          country =="Slovak Republic")
+```
+
+Na tento "dfDZ" aplikujeme párový t-test a porovnávame teda krajinu a "lifeExp". Podľa hodnoty p určíme signifikantnosť. V našom prípade je p-value = 0.006622, čo je štatisticky nevýznamné, takže môžeme povedať, že medzi dĺžkou života na Slovensku a v Kanade nie je štatisticky významný rozdiel. Získali sme aj iné údaje napríklad: 95 percent confidence interval: 1.313909 7.099424.
+
+``` {r}
+t.test(data = dfDZ, lifeExp~country)
+```
+Na vizualizáciu použijeme ggplot2. Vyfiltrujeme naše dáta pomocou GDPpercap. Pomocou _aes_ určíme, čo sa bude nachádzať na x-ovej osi, na y-ovej osi, farbu určíme podľa kontinentu a veľkosť bodiek bude daná populáciou. Vykreslíme si graf pomocou _geom_point_ a _geom_smooth_ a použijeme _facet_wrap_ na oddelenie jednotlivých kontinentov pre prehľadnejšie zobrazenie.
+
+``` {r}
+library(ggplot2)
+```
+Na 1. vizualizácii máme zobrazené jednotlivé kontinenty rôznymi farbami. Tiež sme nastavli veľkosť bodiek proporcne veľkosti populácie. Väčšie bodky reprezentujú krajiny s väčšou populáciou.
+
+``` {r}
+gapminder %>%
+  filter(gdpPercap <50000) %>%
+  ggplot(aes(x=log(gdpPercap), y=lifeExp, col=continent, size=pop))+
+  geom_point(alpha=0.3)
+```
+Tu už sme oddelili jednotlivé kontinentý aby bolo zobrazenie prehľadnejšie.
+``` {r}
+gapminder %>%
+  filter(gdpPercap <50000) %>%
+  ggplot(aes(x=log(gdpPercap), y=lifeExp, col=continent, size=pop))+
+  geom_point(alpha=0.3)+
+  geom_smooth(method = lm)+
+  facet_wrap(~continent)
+```
+Tiež môžeme nastaviť, že farba reprezentuje roky.
+``` {r}
+gapminder %>%
+  filter(gdpPercap <50000) %>%
+  ggplot(aes(x=log(gdpPercap), y=lifeExp, col=year, size=pop))+
+  geom_point(alpha=0.3)+
+  geom_smooth(method = lm)+
+  facet_wrap(~continent)
+```
+
